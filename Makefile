@@ -9,7 +9,13 @@ LDFLAGS := -lm
 solar: src/angles.c src/main.c
 	$(CC) $(CFLAGS) src/angles.c src/main.c -o solar $(LDFLAGS)
 
-clean:
-	rm -f solar
+test_angles: tests/test_angles.c src/angles.c
+	$(CC) $(CFLAGS) tests/test_angles.c src/angles.c -o test_angles $(LDFLAGS)
 
-.PHONY: clean
+test: test_angles
+	./test_angles
+
+clean:
+	rm -f solar test_angles
+
+.PHONY: clean test
