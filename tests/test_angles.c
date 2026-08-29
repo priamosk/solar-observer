@@ -36,7 +36,27 @@ static void check(double actual, double expected, const char *name)
         checks_failed++;
     }
 }
-
+/*
+ * main - the entry point of this test program.
+ *
+ * WHY THIS FILE HAS ITS OWN main
+ *
+ * Every C program must have exactly one function called main. The linker
+ * looks for it by that exact name and makes it the starting point. Without
+ * one, the linker fails with "undefined reference to main".
+ *
+ * We already have a main in src/main.c. So this file has a SECOND one.
+ * That is allowed only because they never end up in the same program:
+ *
+ *   Program 1 (solar)       = src/main.c + src/angles.c
+ *   Program 2 (test_angles) = tests/test_angles.c + src/angles.c
+ *
+ * Both link src/angles.c, because both need the functions being tested.
+ * Neither links the other's main. If we compiled both main files into one
+ * binary, the linker would stop with "multiple definition of main".
+ *
+ * This is why the gcc command for the tests does NOT list src/main.c.
+ */
 int main(void)
 {
     printf("deg2rad\n");
