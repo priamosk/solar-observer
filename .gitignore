@@ -5,3 +5,4 @@ test_angles
 test_julian
 test_orbital
 test_kepler
+test_vec3

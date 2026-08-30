@@ -25,7 +25,7 @@ condition that says it is done.
       *Done when:* Earth's semi-major axis reads 1.000 AU from the table
 - [x] B2 Kepler equation solver (Newton-Raphson)
       *Done when:* for 100 random (M, e) pairs, `E - e*sin(E) - M` < 1e-10
-- [ ] B3 `vec3_t` type and vector helpers
+- [x] B3 `vec3_t` type and vector helpers
       *Done when:* magnitude of (3,4,0) returns exactly 5.0
 
 ### Block C — the coordinate pipeline

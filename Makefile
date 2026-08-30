@@ -21,12 +21,16 @@ test_orbital: tests/test_orbital.c src/orbital.c
 test_kepler: tests/test_kepler.c src/kepler.c src/angles.c
 	$(CC) $(CFLAGS) tests/test_kepler.c src/kepler.c src/angles.c -o test_kepler $(LDFLAGS)
 
-test: test_angles test_julian test_orbital test_kepler
+test_vec3: tests/test_vec3.c src/vec3.c
+	$(CC) $(CFLAGS) tests/test_vec3.c src/vec3.c -o test_vec3 $(LDFLAGS)
+
+test: test_angles test_julian test_orbital test_kepler test_vec3
 	./test_angles
 	./test_julian
 	./test_orbital
 	./test_kepler
+	./test_vec3
 clean:
-	rm -f solar test_angles test_julian test_orbital test_kepler
+	rm -f solar test_angles test_julian test_orbital test_kepler test_vec3
 
 .PHONY: clean test

@@ -418,3 +418,48 @@ The residual tolerance is 1e-10 rather than the solver's own 1e-12,
 because the solver stops when the STEP size falls below tolerance, and
 the residual after that final step is a related but distinct quantity.
 1e-10 radians is about 0.00002 arcseconds.
+## Why vectors return by value here
+
+Every other module in this project returns a status code and writes
+results through pointers (ADR-005). The vector functions do not - they
+take structs by value and return structs by value.
+
+The rule exists for functions that can FAIL. `kepler_solve` can fail:
+it iterates, and iteration can diverge. Subtracting two vectors
+cannot fail. There is no error to report, so there is nothing for a
+return code to carry.
+
+A vec3_t is 24 bytes, which fits in registers on both x86-64 and the
+ESP32's Xtensa core, so passing by value costs nothing in practice.
+The gain is that the code reads as mathematics:
+
+    vec3_t geocentric = vec3_sub(mars, earth);
+
+rather than:
+
+    vec3_t geocentric;
+    vec3_sub(&mars, &earth, &geocentric);
+
+## Why test values are asymmetric
+
+The vector tests use (1,2,3) and (4,5,6) rather than (1,1,1) and
+(2,2,2).
+
+With identical components, a bug that writes b.y into the x slot
+produces the correct answer by accident, and the test passes. With
+distinct values in every slot, any component swap changes the result
+and is caught immediately.
+
+The general rule: choose test inputs that make mistakes visible. A
+test that cannot fail is not a test.
+
+## Why subtraction order is tested explicitly
+
+`vec3_sub(a, b)` must compute a - b. Reversing it would place every
+planet exactly opposite where it belongs.
+
+That failure mode is dangerous specifically because the output still
+looks reasonable - planets at plausible distances, moving at plausible
+speeds, just on the wrong side of the sky. There is no crash and no
+obviously wrong number. The test asserts both directions so the sign
+convention is pinned down before Block C depends on it.
