@@ -132,3 +132,17 @@ Fields to include:
 - number of moons
 - distance from the Sun in AU
 - one or two lines of description
+
+**Deeper study of Block B (after Phase 0).** Return to the orbital
+mechanics and revisit in more depth:
+
+- The geometry of the eccentric anomaly - why the circumscribed circle
+  construction works, and how E relates to true anomaly v
+- Kepler's three laws and where each one enters the code
+- Why Newton-Raphson converges quadratically, and what makes it fail
+- Alternative solvers (Danby, series expansions) and why Newton was
+  chosen
+- The physical meaning of each orbital element, worked through with
+  diagrams
+- How perturbation rates are derived, and why linear rates suffice
+  over 1800-2050
