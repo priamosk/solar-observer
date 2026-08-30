@@ -133,3 +133,140 @@ All numeric assertions in the test suite compare absolute difference
 against a tolerance instead. The appropriate tolerance depends on the
 quantity: 1e-9 for angles in degrees, a few arcminutes for validated
 planet positions.
+---
+
+## Why six numbers describe an orbit
+
+An orbit is an ellipse positioned in three-dimensional space.
+Describing one completely takes exactly six values - no fewer, no
+more. They fall into three groups:
+
+**Shape** (2 values)
+- `a`, semi-major axis: the size, in astronomical units. One AU is
+  Earth's mean distance from the Sun, about 150 million km.
+- `e`, eccentricity: how flattened. Zero is a perfect circle. Near 1
+  is highly elongated, like a comet. At 1 or above the orbit is open -
+  the object leaves and never returns, so it is not a planet.
+
+**Orientation** (3 values)
+- `i`, inclination: how tilted the orbital plane is relative to
+  Earth's. All eight planets sit within about 7 degrees, which is why
+  they always appear in the same narrow band of sky - the zodiac.
+- `node`, longitude of ascending node: where the orbit crosses Earth's
+  plane heading north.
+- `w_bar`, longitude of perihelion: which direction the closest point
+  of the orbit points.
+
+**Position** (1 value)
+- `L`, mean longitude: where the planet actually is along the orbit at
+  a given instant.
+
+The first five are geometry and change only through slow
+gravitational perturbation. The sixth is the planet moving.
+
+## Why every element is a pair
+
+No orbital element is constant. Planets tug on each other
+gravitationally, deforming orbits over centuries. So each element is
+published as a value at the J2000 epoch plus a rate of change per
+Julian century:
+
+    value_now = value_at_J2000 + rate * centuries_since_j2000(jd)
+
+The first five drift by fractions of a degree per century. Mean
+longitude is different in kind - it is not drift, it is orbital
+motion:
+
+| Planet  | deg/century | orbits/century | year       |
+|---------|-------------|----------------|------------|
+| Mercury | 149472      | 415            | 88 days    |
+| Earth   | 35999       | 100            | 365 days   |
+| Mars    | 19140       | 53             | 687 days   |
+| Jupiter | 3035        | 8.4            | 11.9 years |
+| Neptune | 218         | 0.6            | 165 years  |
+
+Earth completes exactly 100 orbits per century, which is not a
+coincidence - the year is defined by that motion.
+
+## Why Earth's row contains zeros
+
+Earth's inclination is essentially zero and its node rate is exactly
+zero, because the reference plane for all these elements - the
+ecliptic - IS Earth's orbital plane. Earth cannot be inclined relative
+to itself, and an orbit with no inclination has no crossing point to
+measure a node from.
+
+Earth's semi-major axis is 1.000 AU for the same reason: the
+astronomical unit was originally defined as Earth's mean distance from
+the Sun.
+
+Earth is the origin of the whole coordinate system.
+
+## Why perihelion precession matters historically
+
+The `w_bar_rate` values mean each orbital ellipse slowly rotates in
+its own plane. Mercury's precession did not match Newtonian gravity -
+there was an unexplained residue of 43 arcseconds per century.
+General relativity accounted for it exactly, and this was its first
+observational confirmation.
+
+Neptune has the opposite story. Uranus kept drifting off its predicted
+path, so Le Verrier computed where a disturbing body must be. Neptune
+was found within one degree of the prediction in 1846. The technique -
+Keplerian elements plus perturbation rates - is exactly what this
+project implements.
+
+## Why static const on the element table
+
+`static` limits the symbol's visibility to orbital.c. No other file
+can reach the array directly; everything goes through `orbital_get()`.
+If the storage layout ever changes, only one file changes.
+
+`const` means the contents never change at runtime. On the ESP32-S3
+this is not cosmetic: const data is placed in flash rather than RAM.
+The chip has megabytes of flash and only a few hundred KB of RAM, so
+keeping a ~900 byte table out of RAM costs nothing and gains
+something.
+
+## Why orbital_get returns a pointer, not a copy
+
+The struct is around 104 bytes. Returning it by value would copy all
+of it on every call, and the Kepler pipeline calls this repeatedly.
+Returning `const orbital_elements_t *` hands back an address instead.
+On the microcontroller the caller then reads directly out of flash,
+with nothing copied into RAM at all.
+
+The `const` in the return type is the compiler enforcing that callers
+cannot modify the table through the pointer they were given.
+
+## Why the bounds check returns NULL
+
+`planet_id_t` is an int underneath. Nothing stops a caller passing -1
+or 99. Without the check, C would read memory past the end of the
+array - no crash, no warning, just whatever bytes happen to be there
+flowing into every downstream calculation.
+
+This is undefined behaviour, and it is dangerous precisely because it
+usually appears to work. Returning NULL forces the caller to notice; a
+caller that ignores it crashes immediately on dereference, loud and
+close to the mistake. Quiet corruption far from the mistake is what we
+are avoiding.
+
+## Property tests versus example tests
+
+There are two kinds of check in this project's test suites.
+
+**Example tests** assert a specific input gives a specific output:
+`norm_360(-10)` must return 350. These catch the bug you anticipated.
+
+**Property tests** assert a rule that must always hold: every
+eccentricity must be below 1, every planet must be farther out than
+the one before, every mean longitude rate must be positive. These
+catch bugs you did not anticipate.
+
+For a hand-typed table of 104 numbers, property tests are the only
+realistic defence. A misplaced decimal point turning Saturn's
+eccentricity from 0.054 into 0.534 would pass every example test that
+does not happen to check that exact field - but it fails the property
+check immediately, because an eccentricity above 1 describes an object
+leaving the solar system.

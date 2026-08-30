@@ -18,11 +18,11 @@ test_julian: tests/test_julian.c src/julian.c
 test_orbital: tests/test_orbital.c src/orbital.c
 	$(CC) $(CFLAGS) tests/test_orbital.c src/orbital.c -o test_orbital $(LDFLAGS)
 
-test: test_angles test_julian
+test: test_angles test_julian test_orbital
 	./test_angles
 	./test_julian
 	./test_orbital
 clean:
 	rm -f solar test_angles test_julian test_orbital
 
-.PHONY: clean test test_julian
+.PHONY: clean test
