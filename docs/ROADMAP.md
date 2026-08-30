@@ -65,11 +65,12 @@ No hardware is ordered before this is met.
 
 ## Phase 2 — static UI
 
+- [ ] `planet_info_t` struct and data table (separate from orbital elements)
+      *Done when:* all eight planets have complete factual data
 - [ ] Planet list screen
 - [ ] Planet detail screen with static facts
 - [ ] Navigation between screens
       *Done when:* all eight planets are reachable and back works
-
 ## Phase 3 — port the ephemeris
 
 - [ ] Migrate Make to CMake for ESP-IDF
@@ -111,3 +112,23 @@ No hardware is ordered before this is met.
 3. No hardware is ordered until Phase 0 exits.
 4. Every non-obvious decision goes in `DECISIONS.md`.
 5. Every piece of reasoning worth remembering goes in `BACKGROUND.md`.
+
+---
+
+## Ideas parked for later
+
+**Planet info data (Phase 2).** Encyclopedic facts for the detail
+screen, kept in a separate struct from the orbital elements. Orbital
+elements are computational input; these are display strings. Mixing
+them would drag description text through every Kepler iteration.
+
+Fields to include:
+- diameter, and ratio to Earth
+- mass, and ratio to Earth
+- surface gravity
+- mean temperature, and min/max where meaningful
+- atmospheric composition
+- length of day, length of year
+- number of moons
+- distance from the Sun in AU
+- one or two lines of description

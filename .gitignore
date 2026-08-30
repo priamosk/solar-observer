@@ -3,3 +3,4 @@ build/
 *.o
 test_angles
 test_julian
+test_orbital

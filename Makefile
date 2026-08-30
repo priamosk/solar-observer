@@ -15,10 +15,14 @@ test_angles: tests/test_angles.c src/angles.c
 test_julian: tests/test_julian.c src/julian.c
 	$(CC) $(CFLAGS) tests/test_julian.c src/julian.c -o test_julian $(LDFLAGS)
 
+test_orbital: tests/test_orbital.c src/orbital.c
+	$(CC) $(CFLAGS) tests/test_orbital.c src/orbital.c -o test_orbital $(LDFLAGS)
+
 test: test_angles test_julian
 	./test_angles
 	./test_julian
+	./test_orbital
 clean:
-	rm -f solar test_angles test_julian
+	rm -f solar test_angles test_julian test_orbital
 
 .PHONY: clean test test_julian
