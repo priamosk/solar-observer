@@ -270,3 +270,129 @@ eccentricity from 0.054 into 0.534 would pass every example test that
 does not happen to check that exact field - but it fails the property
 check immediately, because an eccentricity above 1 describes an object
 leaving the solar system.
+---
+
+## Kepler's second law and why speed varies
+
+A planet does not move at constant speed. Kepler found in 1609 that
+the line from Sun to planet sweeps equal areas in equal times.
+
+Near the Sun the radius is short, so covering the same area requires
+travelling a long arc - fast. Far away the radius is long, so a short
+arc suffices - slow. Earth moves at 30.3 km/s in January and 29.3 km/s
+in July.
+
+Everything that follows exists to handle this variation.
+
+## The three anomalies
+
+"Anomaly" here is an old astronomical term meaning simply "angle of
+position". Three of them describe where a planet is, and converting
+between them is the hard part.
+
+**Mean anomaly M - the fictitious planet.** Imagine a planet moving at
+constant speed around a perfect circle, completing one lap in the same
+period as the real one. M is that planet's angle. It corresponds to
+nothing physical - it is time disguised as an angle - which is why it
+falls straight out of the element table as `M = L - w_bar` and
+increases perfectly linearly.
+
+**True anomaly v - the real angle.** The actual angle of the actual
+planet, measured from the Sun. This is what we ultimately want, and it
+does not relate simply to M.
+
+**Eccentric anomaly E - the bridge.** A geometric construction. Draw a
+circle around the ellipse with radius equal to the semi-major axis.
+From the planet's position, move vertically until you meet that
+circle. E is the angle of that point, measured from the CENTRE of the
+ellipse rather than from the Sun. It has no physical meaning; it
+exists because it makes the mathematics work.
+
+## Why Kepler's equation cannot be solved
+
+Kepler proved the equal-areas law leads to:
+
+    M = E - e * sin(E)
+
+Read as: the uniform angle equals the real angle minus a correction.
+The `e * sin(E)` term is how far the planet runs ahead of or behind
+the fictitious uniform one.
+
+Sanity check: if e = 0 the orbit is a circle, the equation collapses
+to M = E, and no correction is needed - which is correct, because
+motion on a circle really is uniform.
+
+We know M and need E. But E appears both linearly and inside a sine,
+and no algebraic manipulation separates them. This is a transcendental
+equation. Kepler struggled with it for years; in 1900 Bruns proved no
+closed-form solution in elementary functions exists.
+
+The solution is not undiscovered. It is impossible.
+
+## Why Newton-Raphson
+
+Since the equation cannot be solved, it is solved approximately.
+Rewrite it so it equals zero:
+
+    f(E)  = E - e * sin(E) - M
+    f'(E) = 1 - e * cos(E)
+
+Now find where f crosses zero. Guess an E; f(E) tells you how wrong
+the guess is, and f'(E) tells you the slope. Follow the tangent line
+to where it crosses zero and use that as the next guess:
+
+    E_next = E - f(E) / f'(E)
+
+Starting from E = M works well because for small eccentricity E is
+already close to M.
+
+Worked example, Earth (e = 0.0167, M = 1.0 rad):
+
+    E0 = 1.000000
+    E1 = 1.014181
+    E2 = 1.014180   error below 1e-12, done
+
+Three iterations.
+
+## Why convergence is so fast
+
+Newton-Raphson converges quadratically: the number of correct digits
+doubles at every step.
+
+    step 1:   2 correct digits
+    step 2:   4
+    step 3:   8
+    step 4:  16   more than a double can hold
+
+This is why four iterations exhaust double precision. The 30-iteration
+limit in the code is not a working value - it is a safety net.
+
+## Why every loop needs a hard iteration cap
+
+Newton-Raphson can diverge. If the derivative `1 - e * cos(E)`
+approaches zero, the division blows up and the next guess flies off.
+
+For our planets this cannot happen: the largest eccentricity is
+Mercury's 0.2056, so the derivative stays above 0.79 - comfortable
+margin. The cap still exists, because on a microcontroller an
+unbounded loop does not merely run slowly, it hangs the device.
+
+There is no Ctrl+C on an ESP32. The screen freezes, the watchdog timer
+reboots the chip, and the user sees a device restarting for no visible
+reason. Every loop in this project has a provable upper bound.
+
+## Why status is returned and data goes through a pointer
+
+`kepler_solve` has two things to report: the answer, and whether it
+succeeded. C returns one value, so one of them must travel through a
+pointer.
+
+The status is the return value because that makes it awkward to
+ignore. Writing `E = solve(M, e)` and silently using a garbage E is
+easy. Writing `solve(M, e, &E)` and not checking the result at least
+looks wrong to a reader.
+
+This pattern - status returned, data written through output
+parameters - is standard in embedded C, and it is why so many
+functions in this project return int rather than the value they
+compute.

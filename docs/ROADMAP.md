@@ -21,7 +21,7 @@ condition that says it is done.
 
 ### Block B — orbital data and the Kepler solver
 
-- [ ] B1 `orbital_elements_t` struct and the eight-planet table
+- [x] B1 `orbital_elements_t` struct and the eight-planet table
       *Done when:* Earth's semi-major axis reads 1.000 AU from the table
 - [ ] B2 Kepler equation solver (Newton-Raphson)
       *Done when:* for 100 random (M, e) pairs, `E - e*sin(E) - M` < 1e-10
