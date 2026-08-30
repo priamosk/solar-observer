@@ -396,3 +396,25 @@ This pattern - status returned, data written through output
 parameters - is standard in embedded C, and it is why so many
 functions in this project return int rather than the value they
 compute.
+## Why the Kepler tests use inversion instead of reference values
+
+Every other test suite in this project compares against known-correct
+values. The Kepler solver cannot: there is no formula that produces a
+correct E, which is exactly why the solver exists.
+
+Instead the answer is substituted back into the original equation:
+
+    residual = E - e * sin(E) - M
+
+If the residual is essentially zero, E satisfies Kepler's equation and
+is therefore correct by definition.
+
+This is stronger than a table of precomputed values. A table only
+verifies the inputs someone thought to tabulate; inversion verifies
+every input the test happens to try, including the 24-step sweep
+across a full revolution and eccentricities up to 0.95.
+
+The residual tolerance is 1e-10 rather than the solver's own 1e-12,
+because the solver stops when the STEP size falls below tolerance, and
+the residual after that final step is a related but distinct quantity.
+1e-10 radians is about 0.00002 arcseconds.
