@@ -164,6 +164,68 @@ int main(void)
             check_true(outer > inner, "planets never cross orbits");
         }
     }
+        printf("geocentric conversion\n");
+
+    /* THE roadmap acceptance criterion for C2. Earth is at no
+     * distance from itself, so its geocentric position must be
+     * exactly the origin - not approximately, exactly, because the
+     * same value is subtracted from itself. */
+    vec3_t earth_geo;
+    position_geocentric(PLANET_EARTH, j2000, &earth_geo);
+
+    check_true(earth_geo.x == 0.0, "Earth geocentric x is exactly zero");
+    check_true(earth_geo.y == 0.0, "Earth geocentric y is exactly zero");
+    check_true(earth_geo.z == 0.0, "Earth geocentric z is exactly zero");
+
+    /* Mars seen from Earth. The two planets' distance varies enormously
+     * as they orbit: at opposition, when Earth passes between Mars and
+     * the Sun, they come within about 0.37 AU. At conjunction, with the
+     * Sun between them, they are up to 2.68 AU apart.
+     *
+     * This 7x variation is why some Mars observing seasons are
+     * spectacular and others are not worth the effort. */
+    for (int day = 0; day < 3650; day += 30) {
+        vec3_t mars_geo;
+        position_geocentric(PLANET_MARS, j2000 + (double)day, &mars_geo);
+
+        check_range(vec3_length(mars_geo), 0.36, 2.70,
+                    "Mars geocentric distance is within known bounds");
+    }
+
+    /* The triangle inequality, applied to the Sun-Earth-planet
+     * triangle. The distance from Earth to a planet can never exceed
+     * the sum of the two heliocentric distances, and can never be
+     * less than their difference.
+     *
+     * This is pure geometry and must hold for every planet at every
+     * moment. It is a strong check: any sign error or frame confusion
+     * in the subtraction breaks it. */
+    for (int day = 0; day < 1825; day += 50) {
+        double jd = j2000 + (double)day;
+
+        for (int p = 0; p < PLANET_COUNT; p++) {
+            if (p == PLANET_EARTH) {
+                continue;   /* the triangle degenerates for Earth */
+            }
+
+            vec3_t helio, geo, earth_pos;
+            position_heliocentric((planet_id_t)p, jd, &helio);
+            position_heliocentric(PLANET_EARTH, jd, &earth_pos);
+            position_geocentric((planet_id_t)p, jd, &geo);
+
+            double d_planet = vec3_length(helio);
+            double d_earth  = vec3_length(earth_pos);
+            double d_geo    = vec3_length(geo);
+
+            /* A small epsilon absorbs floating-point rounding at the
+             * exact conjunction and opposition points, where the
+             * inequality becomes an equality. */
+            check_true(d_geo <= d_planet + d_earth + 1e-9,
+                       "triangle inequality upper bound");
+            check_true(d_geo >= fabs(d_planet - d_earth) - 1e-9,
+                       "triangle inequality lower bound");
+        }
+    }
 
     printf("error handling\n");
 
@@ -174,6 +236,10 @@ int main(void)
                "invalid planet id rejected");
     check_true(position_heliocentric((planet_id_t)-1, j2000, &dummy) != 0,
                "negative planet id rejected");
+    check_true(position_geocentric(PLANET_MARS, j2000, NULL) != 0,
+               "geocentric NULL result rejected");
+    check_true(position_geocentric(PLANET_COUNT, j2000, &dummy) != 0,
+               "geocentric invalid planet id rejected");
 
     printf("\n%d checks, %d failures\n", checks_run, checks_failed);
 

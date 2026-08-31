@@ -131,4 +131,37 @@ int position_heliocentric(planet_id_t id, double jd, vec3_t *result)
               + y_orbital * (cos_w * sin_i);
 
     return 0;
+    
+}
+
+int position_geocentric(planet_id_t id, double jd, vec3_t *result)
+{
+    if (result == NULL) {
+        return -1;
+    }
+
+    vec3_t planet;
+    vec3_t earth;
+
+    /* Both lookups can fail - an invalid id for the first, a
+     * non-converging solver for either. Check each rather than
+     * assuming success. */
+    int status = position_heliocentric(id, jd, &planet);
+
+    if (status != 0) {
+        return status;
+    }
+
+    status = position_heliocentric(PLANET_EARTH, jd, &earth);
+
+    if (status != 0) {
+        return status;
+    }
+
+    /* Order matters: planet minus Earth, not Earth minus planet.
+     * Reversing it would place every object exactly opposite where it
+     * belongs - a result that looks entirely plausible. */
+    *result = vec3_sub(planet, earth);
+
+    return 0;
 }

@@ -587,3 +587,48 @@ small numbers, where it is most accurate.
 norm_180 is used rather than norm_360 because the Kepler solver starts
 its first guess at E = M, and starting near zero converges marginally
 faster than starting near 360.
+
+## Why geocentric conversion is one subtraction
+
+Heliocentric position says where a planet is relative to the Sun.
+An observer standing on Earth needs it relative to Earth:
+
+    geocentric = planet_from_sun - earth_from_sun
+
+This works only because both vectors are already in the same frame -
+same axes, same units, same epoch. Subtracting moves the origin from
+the Sun to the Earth and changes nothing else.
+
+This is why vec3_t exists, and why its tests insisted so heavily that
+vec3_sub(a, b) computes a - b. Reversed, every planet would appear on
+the exactly opposite side of the sky - plausible-looking output, no
+crash, no obviously wrong number.
+
+## Why Mars distance varies sevenfold
+
+At opposition, when Earth passes between Mars and the Sun, the two are
+about 0.37 AU apart. At conjunction, with the Sun between them, up to
+2.68 AU.
+
+This is why some Mars observing seasons are spectacular and others are
+barely worth setting up for. The same telescope shows a disc seven
+times larger in area at a good opposition than at a poor one. Mars's
+relatively high eccentricity of 0.093 makes even the good oppositions
+vary in quality.
+
+## Why the triangle inequality is a strong test
+
+Sun, Earth and planet form a triangle. Pure geometry requires that any
+side is no longer than the sum of the other two, and no shorter than
+their difference:
+
+    |d_planet - d_earth| <= d_geocentric <= d_planet + d_earth
+
+This must hold for every planet at every instant, and it needs no
+reference data at all. It tests the CONSISTENCY of three independently
+computed quantities against each other.
+
+Any sign error, frame confusion, or unit mismatch in the subtraction
+breaks it immediately. A small epsilon absorbs floating-point rounding
+at exact conjunction and opposition, where the inequality becomes an
+equality.

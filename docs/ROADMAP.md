@@ -33,7 +33,7 @@ condition that says it is done.
 - [x] C1 Heliocentric ecliptic position
       *Done when:* Earth's distance from the Sun stays within 0.983–1.017 AU
       across a full year
-- [ ] C2 Geocentric position (subtract Earth)
+- [x] C2 Geocentric position (subtract Earth)
       *Done when:* Earth-to-Earth distance computes as 0
 - [ ] C3 Equatorial coordinates (RA / Dec)
       *Done when:* the Sun's declination reads about +23.4 deg at the June
