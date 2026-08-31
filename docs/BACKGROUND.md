@@ -632,3 +632,80 @@ Any sign error, frame confusion, or unit mismatch in the subtraction
 breaks it immediately. A small epsilon absorbs floating-point rounding
 at exact conjunction and opposition, where the inequality becomes an
 equality.
+## Why a second coordinate system
+
+Ecliptic coordinates are referenced to Earth's orbital plane. Star
+charts and telescopes use equatorial coordinates, referenced to
+Earth's equator projected onto the sky.
+
+The reason is rotation. Earth spins, so the sky appears to turn about
+the celestial poles. An equatorially mounted telescope tracks a star
+by rotating about a single axis parallel to Earth's, and equatorial
+coordinates match that motion directly. In ecliptic coordinates,
+tracking would require moving in two axes simultaneously.
+
+## The obliquity is the tilt that causes the seasons
+
+The two planes differ by about 23.44 degrees - the obliquity of the
+ecliptic. This is the tilt of Earth's rotation axis relative to its
+orbital plane, and it is the reason seasons exist: in June the
+northern hemisphere leans toward the Sun, in December away from it.
+
+It is not constant. The value decreases by roughly 47 arcseconds per
+century, on a 41000 year cycle:
+
+    e = 23.439291 - 0.0130042 * T
+
+The full IAU expression includes cubic terms, but they contribute less
+than an arcsecond over 1800-2050 - far below the few-arcminute
+accuracy of the orbital element table itself. Including them would be
+false precision.
+
+## Why the x axis is unchanged by the rotation
+
+The ecliptic-to-equatorial conversion rotates about the x axis, so x
+passes through untouched. This is not an accident: the x axis points
+at the vernal equinox, which is precisely where the two planes
+intersect. It is a direction common to both coordinate systems.
+
+## Why atan2 and never atan
+
+This is the single most important detail in C3.
+
+atan takes one ratio, y/x. The ratio loses information:
+
+    y=1,  x=1   ratio = 1  -> 45 degrees   correct
+    y=-1, x=-1  ratio = 1  -> 45 degrees   WRONG, should be 225
+
+Two opposite directions produce the same ratio. atan cannot tell them
+apart and always returns a value in [-90, 90].
+
+atan2(y, x) receives both components separately and therefore knows
+the quadrant, returning the correct value across the full circle.
+
+Using atan here would place half the planets on the exactly opposite
+side of the sky - with no crash, no warning, and output that looks
+entirely reasonable.
+
+## Why the zodiac band test works
+
+All eight orbits lie within about 7 degrees of the ecliptic, and the
+ecliptic is tilted 23.44 degrees to the celestial equator. So no
+planet can reach a declination beyond roughly 31 degrees.
+
+This is why planets always appear in the same narrow band of sky, the
+zodiac, and why ancient astronomers gave that band special
+significance - it is where the wandering stars were always found.
+
+As a test it is strong: a rotation applied in the wrong order, or by
+the wrong angle, breaks it immediately.
+
+## Why Earth is rejected rather than returning zeros
+
+Earth's geocentric position is exactly the origin, so there is no
+direction to report. Computing asin(0.0/0.0) produces NaN.
+
+NaN is uniquely dangerous because it propagates silently and defeats
+range checks - any comparison involving NaN evaluates to false, so
+even a test asserting the value lies within bounds will pass. The
+guard converts this into an explicit error code.
