@@ -6,3 +6,4 @@ test_julian
 test_orbital
 test_kepler
 test_vec3
+test_position

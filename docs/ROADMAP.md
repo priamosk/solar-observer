@@ -30,7 +30,7 @@ condition that says it is done.
 
 ### Block C — the coordinate pipeline
 
-- [ ] C1 Heliocentric ecliptic position
+- [x] C1 Heliocentric ecliptic position
       *Done when:* Earth's distance from the Sun stays within 0.983–1.017 AU
       across a full year
 - [ ] C2 Geocentric position (subtract Earth)

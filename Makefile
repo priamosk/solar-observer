@@ -6,6 +6,10 @@ CFLAGS := -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude -g
 
 LDFLAGS := -lm
 
+POSITION_SRCS := src/position.c src/orbital.c src/kepler.c \
+                 src/angles.c src/julian.c src/vec3.c
+
+
 solar: src/angles.c src/main.c
 	$(CC) $(CFLAGS) src/angles.c src/main.c -o solar $(LDFLAGS)
 
@@ -24,13 +28,17 @@ test_kepler: tests/test_kepler.c src/kepler.c src/angles.c
 test_vec3: tests/test_vec3.c src/vec3.c
 	$(CC) $(CFLAGS) tests/test_vec3.c src/vec3.c -o test_vec3 $(LDFLAGS)
 
-test: test_angles test_julian test_orbital test_kepler test_vec3
+test_position: tests/test_position.c $(POSITION_SRCS)
+	$(CC) $(CFLAGS) tests/test_position.c $(POSITION_SRCS) -o test_position $(LDFLAGS)
+
+test: test_angles test_julian test_orbital test_kepler test_vec3 test_position
 	./test_angles
 	./test_julian
 	./test_orbital
 	./test_kepler
 	./test_vec3
+	./test_position
 clean:
-	rm -f solar test_angles test_julian test_orbital test_kepler test_vec3
+	rm -f solar test_angles test_julian test_orbital test_kepler test_vec3 test_position
 
 .PHONY: clean test

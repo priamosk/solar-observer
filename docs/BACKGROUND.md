@@ -463,3 +463,127 @@ looks reasonable - planets at plausible distances, moving at plausible
 speeds, just on the wrong side of the sky. There is no crash and no
 obviously wrong number. The test asserts both directions so the sign
 convention is pinned down before Block C depends on it.
+---
+
+## From an ellipse to a position in space
+
+The Kepler solver gives eccentric anomaly E. Turning that into a
+position takes two stages: place the planet on a flat ellipse, then
+rotate that ellipse into its real orientation in space.
+
+### Stage one: position in the orbital plane
+
+Ignore three dimensions for a moment. The orbit is a flat ellipse.
+Put it in an x-y plane with the Sun at the focus and perihelion on the
+positive x axis:
+
+    x = a * (cos E - e)
+    y = a * sqrt(1 - e^2) * sin E
+    z = 0
+
+**Why the -e term.** E is measured from the CENTRE of the ellipse, but
+the Sun sits at a FOCUS, displaced from the centre by a*e. The -e
+subtracts that displacement so the result is measured from the Sun.
+
+**Why the sqrt(1 - e^2) factor.** The semi-minor axis is
+b = a * sqrt(1 - e^2). The circumscribed circle used to define E has
+radius a in every direction. Squashing that circle into the ellipse
+means scaling the vertical dimension by exactly this factor.
+
+**Sanity check.** With e = 0 these reduce to x = a*cos E, y = a*sin E,
+which is a circle of radius a. Correct.
+
+### Stage two: three rotations into space
+
+The flat ellipse must be oriented correctly in space. Three rotations,
+applied in a specific order:
+
+1. Rotate by w (argument of perihelion) about the z axis - places
+   perihelion correctly WITHIN the orbital plane, measured from the
+   ascending node.
+2. Rotate by i (inclination) about the x axis - tilts the plane. This
+   is what first gives z a non-zero value.
+3. Rotate by node about the z axis - swings the tilted plane so the
+   ascending node points the right way.
+
+**Note on w.** The element table publishes `w_bar`, longitude of
+perihelion, not `w`, argument of perihelion. They differ by the node:
+
+    w = w_bar - node
+
+### Why the rotation order cannot be changed
+
+Rotations do not commute. Applying them in a different order puts the
+planet somewhere else entirely.
+
+The order follows from how each angle is defined. Read it inward from
+the final frame:
+
+- `node` describes where the ascending node lies IN THE FINAL FRAME
+- `i` describes tilt RELATIVE TO THE NODE
+- `w` describes perihelion WITHIN THE TILTED PLANE
+
+Each angle is defined relative to the result of the ones outside it,
+so they are applied innermost first: w, then i, then node.
+
+### The resulting coordinate system
+
+Heliocentric ecliptic coordinates:
+
+- Origin: the Sun
+- x-y plane: the ecliptic, which is Earth's orbital plane
+- x axis: toward the vernal equinox - the direction of the Sun as seen
+  from Earth at the March equinox
+- z axis: ecliptic north
+- Units: astronomical units
+
+This is the frame every planet position is computed in before being
+converted to something an observer on the ground can use.
+
+## Why position tests check physics rather than values
+
+Block D will compare against JPL reference positions. Before that
+exists, the position code is verified against physical laws that must
+hold whatever the exact numbers are:
+
+- Each planet stays between its known perihelion and aphelion
+- Earth's z coordinate stays near zero, because the ecliptic IS
+  Earth's orbital plane
+- A planet returns to its starting point after one sidereal year
+- Adjacent planets never cross orbits
+
+These are property tests at their most useful. A wrong rotation order,
+a swapped sign, a missing sqrt(1 - e^2) factor, or a degrees-radians
+mix-up all push results outside these bounds, even though none of the
+tests knows a single correct answer in advance.
+
+The Earth distance check alone runs 73 samples across a year and would
+catch most structural errors on its own.
+
+## Why sines and cosines are precomputed
+
+The three combined rotation formulas reference cos_node four times,
+and each other trigonometric value two or three times. Calling cos()
+each time would recompute identical values repeatedly.
+
+On the host this is negligible. On the ESP32-S3, where
+double-precision arithmetic is emulated in software rather than
+executed by the FPU, six trigonometric calls becoming eighteen is
+three times the work for no benefit.
+
+It also reads better: the formulas show the structure of the rotation
+rather than a wall of function calls.
+
+## Why mean anomaly is normalised before the solver
+
+Mercury's mean longitude today is roughly 39972 degrees - it has
+completed 111 orbits since J2000.
+
+sin() and cos() handle large arguments correctly in principle, but
+they must first subtract 111 full turns, and precision is lost in that
+reduction. Normalising M into [-180, 180) first hands the trigonometry
+small numbers, where it is most accurate.
+
+norm_180 is used rather than norm_360 because the Kepler solver starts
+its first guess at E = M, and starting near zero converges marginally
+faster than starting near 360.
