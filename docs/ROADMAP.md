@@ -35,10 +35,10 @@ condition that says it is done.
       across a full year
 - [x] C2 Geocentric position (subtract Earth)
       *Done when:* Earth-to-Earth distance computes as 0
-- [ ] C3 Equatorial coordinates (RA / Dec)
+- [x] C3 Equatorial coordinates (RA / Dec)
       *Done when:* the Sun's declination reads about +23.4 deg at the June
       solstice and -23.4 deg in December
-- [ ] C4 Sidereal time, altitude and azimuth
+- [x] C4 Sidereal time, altitude and azimuth
       *Done when:* results match Stellarium for Zurich to within 1 degree
 
 ### Block D — validation and tooling
@@ -146,3 +146,17 @@ mechanics and revisit in more depth:
   diagrams
 - How perturbation rates are derived, and why linear rates suffice
   over 1800-2050
+  
+  **Location sources (Phases 2, 4, 5).** The observer_t struct is a
+parameter, so the astronomy never depends on where the coordinates
+came from. Three sources, in order of preference:
+
+- GPS module over UART (Phase 5) - metres of accuracy, plus precise
+  UTC, works offline
+- Manual entry or city picker on the touchscreen (Phase 2), stored in
+  NVS so it survives reboots
+- IP geolocation over Wi-Fi (Phase 4) - city-level, tens of km
+
+Accuracy needed is low: a 50 km position error shifts altitude by
+0.45 degrees, about the width of a full moon. IP geolocation alone is
+sufficient for naked-eye and binocular use.

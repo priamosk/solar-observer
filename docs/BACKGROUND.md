@@ -709,3 +709,90 @@ NaN is uniquely dangerous because it propagates silently and defeats
 range checks - any comparison involving NaN evaluates to false, so
 even a test asserting the value lies within bounds will pass. The
 guard converts this into an explicit error code.
+## Why sidereal time and not the clock
+
+Your clock measures solar time: 24 hours from noon to noon. Earth does
+not take 24 hours to rotate once - it takes 23 hours 56 minutes 4
+seconds.
+
+The difference exists because Earth is also moving along its orbit.
+After one full rotation it must turn slightly further to face the Sun
+again. For stars this does not apply: they are effectively infinitely
+far away, so one rotation is enough.
+
+This is sidereal time. It gains almost four minutes per day, which is
+why stars rise four minutes earlier each night, and why the night sky
+changes with the seasons.
+
+The constant 360.98564736629 in gmst() encodes this. The excess over
+360 is Earth's orbital motion, 360 degrees spread over 365.25 days.
+Over a year that excess accumulates to exactly one full turn, which is
+why a year contains one more sidereal day than solar days.
+
+## Why the hour angle uses norm_180
+
+Hour angle is zero at the moment an object crosses the observer's
+meridian - the north-south line directly overhead, and the moment the
+object is highest in the sky.
+
+With [0, 360) the value would jump from 359.9 to 0 exactly at that
+interesting moment. With [-180, 180) it passes smoothly through zero,
+and the sign says directly whether the object is still rising in the
+east (negative) or already setting in the west (positive).
+
+This is the seam-placement rule from the angles section, applied where
+it actually matters.
+
+## Why the azimuth formula adds 180
+
+The atan2 argument arrangement used here produces an angle measured
+from SOUTH, the traditional astronomical convention.
+
+Compasses measure from north. Adding 180 and normalising converts to
+the navigational convention this project uses: 0 north, 90 east, 180
+south, 270 west - which is what a user expects when told where to
+look.
+
+## Why sin_alt is clamped before asin
+
+Floating-point rounding can push the computed value a hair beyond the
+valid [-1, 1] domain of asin. asin(1.0000000001) returns NaN.
+
+NaN is uniquely dangerous: it propagates silently through every
+subsequent operation, and it defeats range checks, because any
+comparison involving NaN evaluates to false. A test asserting the
+result lies within bounds will pass.
+
+Two comparisons prevent it entirely.
+
+## What the horizon tests actually prove
+
+None of these behaviours were programmed. They emerge from the orbital
+elements and the rotations:
+
+- The Sun passes directly overhead at the equator on the equinox
+- It reaches about 66 degrees at Zurich in June and 19 in December
+- It never sets at the north pole in June, and never rises in December
+- Sydney's summer falls in December
+
+Getting all four right from one model is strong evidence the model is
+correct.
+
+## What is not modelled
+
+The output is the geometric position. Three effects are omitted:
+
+**Atmospheric refraction** lifts objects near the horizon by up to
+about 34 arcminutes - slightly more than the Sun's own diameter. This
+is why the Sun appears to set several minutes after it geometrically
+has. Refraction depends on temperature and pressure, both of which the
+BME280 will provide in Phase 5.
+
+**Light travel time.** Jupiter is 35 to 50 light-minutes away, so we
+see it where it was, not where it is. The correction is a fraction of
+an arcminute and below the accuracy of the element table.
+
+**Topocentric parallax.** Positions are computed from Earth's centre,
+not the observer's location on the surface. For planets this is under
+an arcsecond and negligible; for the Moon it would be about a degree
+and would matter.
