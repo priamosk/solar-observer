@@ -127,3 +127,24 @@ switch later.
 ---
 
 ## ADR-008 — Orbital
+
+---
+
+## ADR-010 — No default observer location anywhere in the codebase
+
+**Status:** Accepted
+
+**Context.** The command line tool needs an observer position. A
+default would make it quicker to run during development.
+
+**Decision.** No default. All four arguments are required, and the
+program exits with usage text if any are missing.
+
+**Reasoning.** On the target hardware the observer's position comes
+from the GPS module, from a stored user setting, or from IP
+geolocation - never from a constant. Baking one into the source would
+create a code path that does not exist on the device, and would let a
+missing argument silently produce results for the wrong place.
+
+**Consequences.** Slightly more typing during development. Test
+suites pass coordinates explicitly, which they were doing anyway.

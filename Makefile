@@ -11,6 +11,8 @@ ASTRO_SRCS := src/position.c src/orbital.c src/kepler.c \
 
 HORIZON_SRCS := src/horizon.c src/equatorial.c $(ASTRO_SRCS)
 
+JPL_SRCS := src/equatorial.c $(ASTRO_SRCS)
+
 solar: src/main.c $(HORIZON_SRCS)
 	$(CC) $(CFLAGS) src/main.c $(HORIZON_SRCS) -o solar $(LDFLAGS)
 
@@ -38,7 +40,10 @@ test_equatorial: tests/test_equatorial.c src/equatorial.c $(ASTRO_SRCS)
 test_horizon: tests/test_horizon.c $(HORIZON_SRCS)
 	$(CC) $(CFLAGS) tests/test_horizon.c $(HORIZON_SRCS) -o test_horizon $(LDFLAGS)
 
-test: test_angles test_julian test_orbital test_kepler test_vec3 test_position test_equatorial test_horizon
+test_jpl: tests/test_jpl.c $(JPL_SRCS)
+	$(CC) $(CFLAGS) tests/test_jpl.c $(JPL_SRCS) -o test_jpl $(LDFLAGS)
+
+test: test_angles test_julian test_orbital test_kepler test_vec3 test_position test_equatorial test_horizon test_jpl
 	./test_angles
 	./test_julian
 	./test_orbital
@@ -47,7 +52,8 @@ test: test_angles test_julian test_orbital test_kepler test_vec3 test_position t
 	./test_position
 	./test_equatorial
 	./test_horizon
+	./test_jpl
 clean:
-	rm -f solar test_angles test_julian test_orbital test_kepler test_vec3 test_position test_equatorial test_horizon
+	rm -f solar test_angles test_julian test_orbital test_kepler test_vec3 test_position test_equatorial test_horizon test_jpl
 
 .PHONY: clean test

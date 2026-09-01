@@ -796,3 +796,86 @@ an arcminute and below the accuracy of the element table.
 not the observer's location on the surface. For planets this is under
 an arcsecond and negligible; for the Moon it would be about a degree
 and would matter.
+
+---
+
+## What validation against JPL Horizons measures
+
+The 4545 property tests verify that the code is SELF-CONSISTENT:
+orbits close, the triangle inequality holds, the seasons emerge. None
+of them compares against reality.
+
+An error affecting every calculation identically would pass all of
+them. If the obliquity constant were 23.5 instead of 23.44, every test
+would still pass and every planet would be 3.6 arcminutes wrong. Only
+an external reference catches that class of error.
+
+### What is compared
+
+Right ascension and declination - two angles defining a DIRECTION on
+the celestial sphere, independent of where the observer stands.
+Distance in AU is checked alongside.
+
+Altitude and azimuth are deliberately NOT compared. They depend on
+observer position, exact time, and atmospheric refraction. Comparing
+them would measure differences in assumptions rather than errors in
+calculation. RA and Dec are the clean quantity: same direction, same
+origin, same conventions.
+
+Both sides are configured to match: geocentric observer (code 500),
+astrometric rather than apparent coordinates, and no refraction model.
+
+### How error is expressed
+
+Angular distance, in arcminutes.
+
+    1 degree = 60 arcminutes
+    1 arcminute = 60 arcseconds
+
+For scale:
+
+| Object                        | Angular size |
+|-------------------------------|--------------|
+| Full moon                     | 30'          |
+| Naked-eye resolution          | ~60'         |
+| Field of view, 10x50 binoculars | ~300'      |
+| Jupiter's disc                | 0.7'         |
+
+An error of 9 arcminutes places a planet within one third of a moon
+diameter of its true position - undetectable by eye, and well inside
+the centre of a binocular field.
+
+### Why JPL Horizons is the authority
+
+Horizons does not use Keplerian elements. It performs numerical
+integration: it takes the positions and velocities of every body and
+solves the gravitational equations step by step, including every
+mutual interaction and general-relativistic corrections.
+
+It is the system used to navigate spacecraft. Its planetary accuracy
+is a fraction of an arcsecond. When results disagree, the error is
+ours.
+
+## Why Jupiter and Saturn are the worst
+
+The measured error is not uniform:
+
+| Planet                                  | Error       |
+|-----------------------------------------|-------------|
+| Mercury, Venus, Mars, Uranus, Neptune   | under 0.5'  |
+| Jupiter                                 | 1 - 5.5'    |
+| Saturn                                  | 4.6 - 9.1'  |
+
+Jupiter and Saturn have orbital periods in a near 5:2 ratio - Jupiter
+completes five orbits while Saturn completes two. This is known as the
+Great Inequality, and it means their gravitational tugs accumulate
+systematically instead of averaging out over time.
+
+A linear "value plus rate" model cannot represent a periodic
+perturbation. This is also why Saturn has the largest a_rate in the
+element table: the linear fit is trying to absorb a variation that is
+not linear.
+
+The error also does not grow with distance from J2000 as one might
+expect. Saturn's error is 9.1' at J2000 itself and 4.6' in 2026. It is
+a property of the planet, not of the epoch.
