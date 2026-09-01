@@ -11,8 +11,8 @@ ASTRO_SRCS := src/position.c src/orbital.c src/kepler.c \
 
 HORIZON_SRCS := src/horizon.c src/equatorial.c $(ASTRO_SRCS)
 
-solar: src/angles.c src/main.c
-	$(CC) $(CFLAGS) src/angles.c src/main.c -o solar $(LDFLAGS)
+solar: src/main.c $(HORIZON_SRCS)
+	$(CC) $(CFLAGS) src/main.c $(HORIZON_SRCS) -o solar $(LDFLAGS)
 
 test_angles: tests/test_angles.c src/angles.c
 	$(CC) $(CFLAGS) tests/test_angles.c src/angles.c -o test_angles $(LDFLAGS)
