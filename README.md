@@ -212,3 +212,18 @@ tonight, and where should I look?**
 
 Full task breakdown with acceptance criteria in
 [`docs/ROADMAP.md`](docs/ROADMAP.md).
+## Running on hardware
+
+The ephemeris component compiles unchanged for the ESP32 under
+ESP-IDF. Measured on an ESP32-D0WD-V3 at 240 MHz:
+
+| | |
+|---|---|
+| Full pipeline, seven planets | 38.4 ms |
+| Per planet | 5.48 ms |
+| Heap consumed | 0 bytes |
+
+Roughly 300x slower than the host, since the ESP32 emulates
+double-precision arithmetic in software. At one refresh per second
+this is 3.8% CPU utilisation. Zero heap usage confirms the
+no-dynamic-allocation constraint holds in practice.

@@ -148,3 +148,35 @@ missing argument silently produce results for the wrong place.
 
 **Consequences.** Slightly more typing during development. Test
 suites pass coordinates explicitly, which they were doing anyway.
+---
+
+## ADR-011 — Double precision retained on the target, measured
+
+**Status:** Accepted
+
+**Context.** ADR-005 chose `double` for correctness, noting the ESP32
+has no double-precision FPU and that the cost was unmeasured.
+
+**Measurement.** Ported unchanged to an ESP32-D0WD-V3 at 240 MHz:
+
+    Seven planets, full pipeline: 38.4 ms
+    Per planet: 5.48 ms
+    Host equivalent: roughly 20 us total
+
+Approximately 300x slower, consistent with software emulation of
+double-precision arithmetic.
+
+**Decision.** Keep `double`. No conversion to float or fixed point.
+
+**Reasoning.** The UI refreshes positions once per second. 38 ms is
+3.8% CPU utilisation, leaving 96% for display, Wi-Fi and sensors. The
+accuracy budget is already dominated by the Keplerian model (9.4
+arcminutes for Saturn); introducing float rounding on top of that
+would degrade results for no useful gain.
+
+**Also measured.** Free heap unchanged at 303280 bytes before and
+after the full computation. Zero dynamic allocation, as designed.
+
+**Revisit if.** The display or a sensor loop needs the CPU at a rate
+where 38 ms per second becomes contention, or if a future
+higher-refresh feature is added.
